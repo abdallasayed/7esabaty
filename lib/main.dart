@@ -184,7 +184,8 @@ class HomeScreen extends StatelessWidget {
             ),
             actions: [
                IconButton(
-                icon: const Icon(Icons.swap_horiz_circle, color: Colors.indigo, size: 30),
+                // تم التصحيح هنا: استخدام swap_horiz بدلاً من swap_horiz_circle
+                icon: const Icon(Icons.swap_horiz, color: Colors.indigo, size: 30),
                 onPressed: () => _showTransferDialog(context),
               )
             ],
@@ -340,7 +341,6 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _showTransferDialog(BuildContext context) {
-    // (Similar to previous logic but simpler UI)
     final amountCtrl = TextEditingController();
     bool fromPocket = true;
     showDialog(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, setSt) => AlertDialog(
