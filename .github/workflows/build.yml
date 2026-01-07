@@ -15,7 +15,6 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
-          # تم حذف سطر الكاش المسبب للمشكلة
 
       - uses: subosito/flutter-action@v2
         with:
@@ -26,9 +25,9 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      # هذا هو السطر السحري الجديد الذي سينشئ ملفات الأندرويد المفقودة
+      # هنا الإصلاح: أجبرناه على استخدام اسم يبدأ بحرف بدلاً من رقم
       - name: Create Android Files
-        run: flutter create .
+        run: flutter create --project-name smart_wallet .
 
       - name: Build APK
         run: flutter build apk --release
