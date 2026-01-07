@@ -9,13 +9,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4      # تحديث إلى v4
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4    # تحديث إلى v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'           # استخدام جافا 17 المتوافقة مع التحديثات
-          cache: 'gradle'
+          java-version: '17'
+          # تم حذف سطر الكاش المسبب للمشكلة
 
       - uses: subosito/flutter-action@v2
         with:
@@ -26,12 +26,15 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      # هذا هو السطر السحري الجديد الذي سينشئ ملفات الأندرويد المفقودة
+      - name: Create Android Files
+        run: flutter create .
+
       - name: Build APK
         run: flutter build apk --release
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4  # <--- (تم الإصلاح هنا)
+        uses: actions/upload-artifact@v4
         with:
           name: SmartWalletPro-v2
           path: build/app/outputs/flutter-apk/app-release.apk
-
