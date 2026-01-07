@@ -1,7 +1,7 @@
 name: smart_wallet
-description: Professional Wallet App
+description: Ultra Professional Wallet
 publish_to: 'none'
-version: 2.0.0+1
+version: 3.0.0+1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -9,11 +9,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  shared_preferences: ^2.2.0   # لحفظ البيانات
-  intl: ^0.18.1               # للتاريخ والعملة
-  fl_chart: ^0.66.0           # للرسوم البيانية الذكية (جديد)
-  google_fonts: ^6.1.0        # خطوط جميلة (جديد)
+  shared_preferences: ^2.2.0
+  intl: ^0.18.1
+  fl_chart: ^0.66.0
+  google_fonts: ^6.1.0
   cupertino_icons: ^1.0.2
+  # المكتبات الجديدة
+  local_auth: ^2.1.8        # للبصمة
+  share_plus: ^7.2.1        # للمشاركة وتصدير الملفات
+  path_provider: ^2.1.1     # للوصول للملفات
+  csv: ^5.0.2               # لإنشاء ملفات Excel
 
 dev_dependencies:
   flutter_test:
