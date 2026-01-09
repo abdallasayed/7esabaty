@@ -1,7 +1,7 @@
-name: smart_wallet
-description: Ultra Professional Wallet
+name: smart_manager_pro
+description: A new Flutter project.
 publish_to: 'none'
-version: 3.0.0+1
+version: 1.0.0+1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -9,16 +9,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # المكتبات الأساسية
   shared_preferences: ^2.2.0
   intl: ^0.18.1
-  fl_chart: ^0.66.0
   google_fonts: ^6.1.0
+  fl_chart: ^0.66.0
   cupertino_icons: ^1.0.2
-  # المكتبات الجديدة
-  local_auth: ^2.1.8        # للبصمة
-  share_plus: ^7.2.1        # للمشاركة وتصدير الملفات
-  path_provider: ^2.1.1     # للوصول للملفات
-  csv: ^5.0.2               # لإنشاء ملفات Excel
+  # المكتبة التي كانت ناقصة (الكاميرا)
+  image_picker: ^1.0.7
 
 dev_dependencies:
   flutter_test:
