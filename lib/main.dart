@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'dart:ui'; // (مهم جداً: تم إضافة هذه المكتبة لإصلاح خطأ الفلتر)
+import 'dart:io'; // (من أجل ملفات الصور)
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:image_picker/image_picker.dart'; // (من أجل الكاميرا)
 
 void main() {
   runApp(const MyApp());
@@ -47,6 +50,7 @@ class MyApp extends StatelessWidget {
           centerTitle: true,
           titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary),
         ),
+        // تم إصلاح إعدادات البطاقة هنا
         cardTheme: CardTheme(
           color: AppColors.cardBg,
           elevation: 8,
@@ -83,12 +87,18 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// --- Data Models (لم تتغير) ---
+// --- Data Models ---
 class Transaction {
-  String id, title, type; double amount; String source, category; DateTime date;
-  Transaction({required this.id, required this.title, required this.amount, required this.type, required this.source, required this.category, required this.date});
-  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'amount': amount, 'type': type, 'source': source, 'category': category, 'date': date.toIso8601String()};
-  factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(id: json['id'], title: json['title'], amount: json['amount'], type: json['type'], source: json['source'], category: json['category'] ?? 'personal', date: DateTime.parse(json['date']));
+  String id, title, type; 
+  double amount; 
+  String source, category; 
+  String? imagePath; // (تمت استعادة ميزة الصورة)
+  DateTime date;
+  
+  Transaction({required this.id, required this.title, required this.amount, required this.type, required this.source, required this.category, this.imagePath, required this.date});
+  
+  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'amount': amount, 'type': type, 'source': source, 'category': category, 'imagePath': imagePath, 'date': date.toIso8601String()};
+  factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(id: json['id'], title: json['title'], amount: json['amount'], type: json['type'], source: json['source'], category: json['category'] ?? 'personal', imagePath: json['imagePath'], date: DateTime.parse(json['date']));
 }
 
 class Debt {
@@ -134,9 +144,9 @@ class _MainScreenState extends State<MainScreen> {
     prefs.setString('debts', json.encode(debts.map((e) => e.toJson()).toList()));
   }
 
-  void _addTransaction(String title, double amount, String type, String source, String category) {
+  void _addTransaction(String title, double amount, String type, String source, String category, String? imagePath) {
     setState(() {
-      transactions.insert(0, Transaction(id: DateTime.now().toString(), title: title, amount: amount, type: type, source: source, category: category, date: DateTime.now()));
+      transactions.insert(0, Transaction(id: DateTime.now().toString(), title: title, amount: amount, type: type, source: source, category: category, imagePath: imagePath, date: DateTime.now()));
       if (type == 'income') { if (source == 'shop') shopBalance += amount; else if (source == 'pocket') pocketBalance += amount; else walletBalance += amount; }
       else { if (source == 'shop') shopBalance -= amount; else if (source == 'pocket') pocketBalance -= amount; else walletBalance -= amount; }
     });
@@ -209,7 +219,8 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
         child: BackdropFilter(
-          filter: android.graphics.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          // (تم الإصلاح هنا)
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: BottomNavigationBar(
             currentIndex: _selectedIndex,
             onTap: (i) => setState(() => _selectedIndex = i),
@@ -230,15 +241,17 @@ class _MainScreenState extends State<MainScreen> {
 class GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin; // (تم الإصلاح: إضافة المارجن)
   final double? height;
   final bool isGlow;
-  const GlassCard({super.key, required this.child, this.padding, this.height, this.isGlow = false});
+  const GlassCard({super.key, required this.child, this.padding, this.margin, this.height, this.isGlow = false}); // (تمت الإضافة للكونستركتور)
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: height,
       padding: padding ?? const EdgeInsets.all(20),
+      margin: margin, // (تم التفعيل)
       decoration: BoxDecoration(
         color: AppColors.glass,
         borderRadius: BorderRadius.circular(25),
@@ -286,7 +299,7 @@ class NeonButton extends StatelessWidget {
 class DashboardTab extends StatelessWidget {
   final double shop, pocket, wallet;
   final List<Transaction> transactions;
-  final Function(String, double, String, String, String) onAdd;
+  final Function(String, double, String, String, String, String?) onAdd;
   final Function(String) onDelete;
   final VoidCallback onWage;
 
@@ -321,14 +334,12 @@ class DashboardTab extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 25),
-            // زر اليومية
             NeonButton(onPressed: onWage, label: 'استلام اليومية (250 ج)', icon: Icons.monetization_on_outlined),
             const SizedBox(height: 25),
             const Text('أحدث العمليات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
             const SizedBox(height: 15),
-            // قائمة العمليات
             ...transactions.take(10).map((t) => _buildTransactionItem(t)).toList(),
-            const SizedBox(height: 80), // مساحة للزر العائم وشريط التنقل
+            const SizedBox(height: 80),
           ],
         ),
       ),
@@ -372,7 +383,13 @@ class DashboardTab extends StatelessWidget {
           child: Icon(t.type == 'transfer' ? Icons.swap_horiz : (isIncome ? Icons.arrow_downward : Icons.arrow_upward), color: color),
         ),
         title: Text(t.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('${DateFormat('dd/MM/yyyy').format(t.date)} • ${t.source.toUpperCase()}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${DateFormat('dd/MM/yyyy').format(t.date)} • ${t.source.toUpperCase()}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            if (t.imagePath != null) const Row(children: [Icon(Icons.attachment, size: 12, color: Colors.grey), SizedBox(width: 4), Text('مرفق صورة', style: TextStyle(fontSize: 10, color: Colors.grey))])
+          ],
+        ),
         trailing: Text('${t.amount.toStringAsFixed(1)}', style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
         onLongPress: () => onDelete(t.id),
       ),
@@ -380,7 +397,8 @@ class DashboardTab extends StatelessWidget {
   }
 
   void _showAddSheet(BuildContext context) {
-    final tCtrl = TextEditingController(); final aCtrl = TextEditingController(); String type = 'expense'; String cat = 'business';
+    final tCtrl = TextEditingController(); final aCtrl = TextEditingController(); String type = 'expense'; String cat = 'business'; File? image;
+    
     showModalBottomSheet(
       context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setSt) => Container(
@@ -404,11 +422,24 @@ class DashboardTab extends StatelessWidget {
           TextField(controller: tCtrl, decoration: const InputDecoration(labelText: 'الوصف', prefixIcon: Icon(Icons.description_outlined))),
           const SizedBox(height: 15),
           TextField(controller: aCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'المبلغ', prefixIcon: Icon(Icons.attach_money))),
+          const SizedBox(height: 15),
+          // زر الكاميرا (تمت استعادته)
+          ListTile(
+            leading: const Icon(Icons.camera_alt, color: AppColors.primary),
+            title: const Text('تصوير الفاتورة', style: TextStyle(color: Colors.white)),
+            subtitle: image != null ? const Text('تم التقاط الصورة', style: TextStyle(color: Colors.green)) : const Text('اختياري', style: TextStyle(color: Colors.grey)),
+            trailing: image != null ? Image.file(image!, width: 40, height: 40) : null,
+            onTap: () async {
+              final picker = ImagePicker();
+              final picked = await picker.pickImage(source: ImageSource.camera);
+              if(picked != null) setSt(() => image = File(picked.path));
+            },
+          ),
           const SizedBox(height: 30),
           NeonButton(onPressed: (){ 
             if(tCtrl.text.isNotEmpty && aCtrl.text.isNotEmpty) {
               String source = cat == 'business' ? 'shop' : 'pocket';
-              onAdd(tCtrl.text, double.parse(aCtrl.text), type, source, cat); Navigator.pop(ctx);
+              onAdd(tCtrl.text, double.parse(aCtrl.text), type, source, cat, image?.path); Navigator.pop(ctx);
             }
           }, label: 'حفظ العملية', icon: Icons.check_circle_outline),
           const SizedBox(height: 20),
@@ -463,7 +494,7 @@ class DebtsTab extends StatelessWidget {
 
   Widget _buildDebtCard(BuildContext context, Debt d) {
     return GlassCard(
-      margin: const EdgeInsets.only(bottom: 15),
+      margin: const EdgeInsets.only(bottom: 15), // (تم الإصلاح: يعمل الآن)
       padding: const EdgeInsets.all(20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
